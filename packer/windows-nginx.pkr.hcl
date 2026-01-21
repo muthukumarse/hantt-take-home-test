@@ -36,13 +36,13 @@ build {
 
   # Upload Nginx Config
   provisioner "file" {
-    source      = "windows/nginx.conf"
+    source      = "../windows/nginx.conf"
     destination = "C:\\Windows\\Temp\\nginx.conf"
   }
 
   # Run Installation Script
   provisioner "powershell" {
-    script = "windows/install_nginx.ps1"
+    script = "../windows/install_nginx.ps1"
   }
   
   # Sysprep / Generalize (Optional but good practice, skipping for speed in this exercise)
