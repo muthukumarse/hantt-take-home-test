@@ -25,7 +25,7 @@ source "amazon-ebs" "windows-nginx" {
   winrm_insecure = true
 
   # User data to enable WinRM is critical
-  user_data_file = "packer/bootstrap_winrm.txt"
+  user_data_file = "bootstrap_winrm.txt"
 }
 
 build {
