@@ -17,7 +17,22 @@ This project provisions a dual-platform environment (Linux & Windows) running Ng
 1.  **AWS Credentials**: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` stored as GitHub Secrets.
 2.  **GitHub Actions**: Enabled for the repository.
 
-## How to Deploy
+## Local Development (Faster Feedback Loop)
+
+To validate your changes locally before pushing to GitHub:
+
+### 1. Install Dependencies (macOS)
+```bash
+brew install packer terraform ansible
+```
+
+### 2. Run Validation Script
+I have prepared a script to validate Terraform, Packer, and Ansible code locally.
+```bash
+./scripts/validate_local.sh
+```
+
+## How to Deploy via GitHub Actions
 
 The deployment is automated via the **DevOps Exercise Pipeline** GitHub Action.
 
