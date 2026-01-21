@@ -21,7 +21,7 @@ source "amazon-ebs" "windows-nginx" {
 
   communicator   = "winrm"
   winrm_username = "Administrator"
-  winrm_use_ssl  = true
+  winrm_use_ssl  = false
   winrm_insecure = true
 
   # User data to enable WinRM is critical
