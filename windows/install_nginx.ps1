@@ -72,4 +72,18 @@ Register-ScheduledTask -TaskName "StartNginx" -Action $Action -Trigger $Trigger 
 New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
 
+# 8. Create Custom Index Page
+$IndexFile = "$InstallDir\html\index.html"
+$Content = @"
+<html>
+<head><title>Welcome to DevOps Exercise (Windows)</title></head>
+<body>
+<h1>Hello from Windows Server 2019!</h1>
+<p>This page is served by Nginx securely via HTTPS.</p>
+<p>Built with Packer and PowerShell.</p>
+</body>
+</html>
+"@
+Set-Content -Path $IndexFile -Value $Content
+
 Write-Host "Nginx installation and configuration complete."

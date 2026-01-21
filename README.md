@@ -72,3 +72,29 @@ curl -k https://<linux_public_ip>
 2.  **RDP**: Connect to `<windows_public_ip>` via RDP (Port 3389).
     - Username: `Administrator`
     - Password: (Get from AWS Console -> Connect -> RDP Client -> Get Password using your Key Pair)
+
+### Verify Terraform
+```bash
+terraform output
+# Should display the public IP addresses
+```
+
+### Verify Packer
+```bash
+packer validate aws-linux-nginx.pkr.hcl
+packer validate windows-nginx.pkr.hcl
+# Should display no errors
+```
+
+### Verify Ansible
+```bash
+ansible-playbook ansible/playbook.yml --syntax-check
+# Should display no errors
+```
+
+### TODO
+- How to verify the AMIs?
+- Add Packer build and Ansible run
+- Add Terraform apply
+- Add Terraform destroy
+

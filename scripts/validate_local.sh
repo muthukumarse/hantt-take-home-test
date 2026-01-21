@@ -36,3 +36,6 @@ else
 fi
 
 echo "=== All Validations Passed Successfully! ==="
+
+# TODO: Add Packer build and Ansible run
+# Skipping for now
