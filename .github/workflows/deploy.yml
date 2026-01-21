@@ -7,6 +7,14 @@ on:
     branches: [ main ]
   workflow_dispatch: # Allows manual trigger for the full Build & Deploy
     inputs:
+      build_ami:
+        description: 'Select "Yes" to confirm build AMI'
+        required: true
+        type: choice
+        options:
+          - 'Yes'
+          - 'No'
+        default: 'No'
       confirm_deploy:
         description: 'Select "Yes" to confirm deployment to AWS'
         required: true
@@ -61,7 +69,7 @@ jobs:
   # Phase 2: Build Golden Image (Runs only on main with manual confirmation)
   build-ami:
     needs: validate
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_deploy == 'Yes'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.build_ami == 'Yes'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -83,6 +91,7 @@ jobs:
   # Phase 3: Infrastructure Deployment (Runs after AMI build)
   deploy-infra:
     needs: build-ami
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_deploy == 'Yes'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
