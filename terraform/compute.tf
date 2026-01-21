@@ -23,6 +23,15 @@ resource "aws_security_group" "web_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+# This something important for windows to connect via RDP
+# but we should restrict this to our ip address
+  ingress {
+    description = "RDP from my IP"
+    from_port   = 3389
+    to_port     = 3389
+    protocol    = "tcp"
+    cidr_blocks = [var.my_ip]
+  }
 
   egress {
     from_port   = 0
@@ -58,7 +67,17 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
-data "aws_ami" "nginx" {
+data "aws_ami" "windows" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "name"
+    values = ["devops-exercise-windows-*"]
+  }
+}
+
+data "aws_ami" "linux" {
   most_recent = true
   owners      = ["self"]
 
@@ -68,8 +87,8 @@ data "aws_ami" "nginx" {
   }
 }
 
-resource "aws_instance" "web" {
-  ami           = data.aws_ami.nginx.id
+resource "aws_instance" "windows_web" {
+  ami           = data.aws_ami.windows.id
   instance_type = var.instance_type
   subnet_id     = aws_subnet.public.id
   
@@ -79,6 +98,21 @@ resource "aws_instance" "web" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
   tags = {
-    Name = "${var.project_name}-web-server"
+    Name = "${var.project_name}-windows-web"
+  }
+}
+
+resource "aws_instance" "linux_web" {
+  ami           = data.aws_ami.linux.id
+  instance_type = "t2.micro" # Linux works fine on micro
+  subnet_id     = aws_subnet.public.id
+  
+  # key_name      = var.key_name # Commented out unless user provides a key
+
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
+
+  tags = {
+    Name = "${var.project_name}-linux-web"
   }
 }

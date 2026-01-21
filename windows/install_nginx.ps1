@@ -1,31 +1,75 @@
-# PowerShell script to install Nginx on Windows Server
-# Installs Nginx and configures it (basic setup)
+# PowerShell script to install Nginx on Windows Server with SSL
+$ErrorActionPreference = "Stop"
 
+# 1. Install Chocolatey
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+$env:Path = $env:Path + ";$env:ALLUSERSPROFILE\chocolatey\bin"
+
+# 2. Install OpenSSL
+choco install openssl.light -y
+$env:Path = $env:Path + ";C:\Program Files\OpenSSL\bin"
+
+# 3. Download and Extract Nginx
 $NginxUrl = "http://nginx.org/download/nginx-1.24.0.zip"
 $InstallDir = "C:\nginx"
 $ZipPath = "$env:TEMP\nginx.zip"
 
-Write-Host "Downloading Nginx from $NginxUrl..."
+Write-Host "Downloading Nginx..."
 Invoke-WebRequest -Uri $NginxUrl -OutFile $ZipPath
 
 Write-Host "Extracting Nginx..."
 Expand-Archive -Path $ZipPath -DestinationPath "C:\" -Force
 
-# Rename the folder to remove version number for easier access
+# Rename extracted folder (nginx-1.24.0 -> nginx)
 $ExtractedDir = Get-ChildItem "C:\" -Filter "nginx-*" | Where-Object { $_.PSIsContainer } | Select-Object -First 1
-if ($ExtractedDir) {
+if ($ExtractedDir -and $ExtractedDir.Name -ne "nginx") {
     Rename-Item -Path $ExtractedDir.FullName -NewName "nginx" -Force
 }
 
-# Create a self-signed certificate (basic example for Windows)
-$Cert = New-SelfSignedCertificate -DnsName "example.com" -CertStoreLocation "cert:\LocalMachine\My"
-$Thumbprint = $Cert.Thumbprint
+# 4. Generate SSL Certificates using OpenSSL
+$CertDir = "$InstallDir\conf"
+$KeyPath = "$CertDir\nginx.key"
+$CrtPath = "$CertDir\nginx.crt"
+$OpenSSLConfig = "$env:TEMP\openssl.cnf"
 
-Write-Host "Nginx installed at $InstallDir"
-Write-Host "Self-signed certificate created with Thumbprint: $Thumbprint"
+# Create a minimal OpenSSL config for the cert
+@"
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+C = US
+ST = State
+L = City
+O = Organization
+OU = OrgUnit
+CN = example.com
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = example.com
+"@ | Out-File -FilePath $OpenSSLConfig -Encoding ASCII
 
-# Basic config update to point to SSL would require manipulating nginx.conf text file
-# For this exercise, we'll just start Nginx
-Start-Process "$InstallDir\nginx.exe"
+# Generate Key and Cert
+& "C:\Program Files\OpenSSL\bin\openssl.exe" req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $KeyPath -out $CrtPath -config $OpenSSLConfig
 
-Write-Host "Nginx started."
+# 5. Setup Nginx Configuration
+# We assume the nginx.conf is uploaded to C:\Windows\Temp\nginx.conf by Packer
+if (Test-Path "C:\Windows\Temp\nginx.conf") {
+    Move-Item -Path "C:\Windows\Temp\nginx.conf" -Destination "$InstallDir\conf\nginx.conf" -Force
+}
+
+# 6. Create Scheduled Task to Start Nginx on Boot
+$Action = New-ScheduledTaskAction -Execute "$InstallDir\nginx.exe"
+$Trigger = New-ScheduledTaskTrigger -AtStartup
+$Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
+Register-ScheduledTask -TaskName "StartNginx" -Action $Action -Trigger $Trigger -Principal $Principal
+
+# 7. Allow Port 80 and 443 in Firewall
+New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+
+Write-Host "Nginx installation and configuration complete."

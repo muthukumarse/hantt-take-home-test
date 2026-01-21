@@ -27,10 +27,15 @@ variable "private_subnet_cidr" {
 
 variable "instance_type" {
   description = "EC2 instance type"
-  default     = "t2.micro"
+  default     = "t2.medium" # Windows requires more resources
 }
 
 variable "key_name" {
   description = "SSH Key Pair name"
   default     = "my-key-pair" # User should ensure this exists or we can create one (optional)
+}
+
+variable "my_ip" {
+  description = "Your public IP address (CIDR format) for RDP/SSH access"
+  default     = "0.0.0.0/0" # Change this to your actual IP, e.g., "1.2.3.4/32"
 }

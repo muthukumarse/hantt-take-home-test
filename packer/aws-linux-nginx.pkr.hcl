@@ -48,8 +48,8 @@ build {
     user          = "ec2-user"
     use_proxy     = false
     extra_arguments = [
-      "--extra-vars", "domain_name=example.com"
-      # "--scp-extra-args", "-O" # Sometimes needed for legacy scp if sftp fails, but usually fine
+      "--extra-vars", "domain_name=example.com ansible_python_interpreter=/usr/bin/python3",
+      "--scp-extra-args", "-O" # Critical for sftp failures on some systems
     ]
   }
 }

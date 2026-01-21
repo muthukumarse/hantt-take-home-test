@@ -59,6 +59,7 @@ jobs:
         run: |
           packer init .
           packer validate -syntax-only aws-linux-nginx.pkr.hcl
+          packer validate -syntax-only windows-nginx.pkr.hcl
 
       - name: Ansible Syntax Check
         run: |
@@ -84,9 +85,13 @@ jobs:
         working-directory: packer
         run: packer init .
 
-      - name: Build AMI
+      - name: Build Linux AMI
         working-directory: packer
         run: packer build aws-linux-nginx.pkr.hcl
+
+      - name: Build Windows AMI
+        working-directory: packer
+        run: packer build windows-nginx.pkr.hcl
 
   # Phase 3: Infrastructure Deployment (Runs after AMI build)
   deploy-infra:
