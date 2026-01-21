@@ -11,15 +11,9 @@ packer {
   }
 }
 
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
 
-variable "instance_type" {
-  type    = string
-  default = "t2.micro"
-}
+
+
 
 source "amazon-ebs" "nginx" {
   ami_name      = "devops-exercise-nginx-{{timestamp}}"

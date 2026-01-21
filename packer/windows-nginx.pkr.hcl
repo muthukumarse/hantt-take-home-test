@@ -7,15 +7,9 @@ packer {
   }
 }
 
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
 
-variable "instance_type" {
-  type    = string
-  default = "t2.medium" # t2.micro is often too slow for Windows updates/provisioning
-}
+
+
 
 source "amazon-ebs" "windows-nginx" {
   ami_name      = "devops-exercise-windows-${formatdate("YYYYMMDDhhmmss", timestamp())}"
