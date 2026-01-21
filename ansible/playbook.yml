@@ -1,0 +1,57 @@
+---
+- name: Configure Nginx with HTTPS
+  hosts: all
+  become: true
+  vars:
+    # Customize these variables or override them via extra-vars
+    domain_name: "example.com"
+    cert_country: "US"
+    cert_state: "California"
+    cert_locality: "San Francisco"
+    cert_org: "MyCompany"
+    cert_common_name: "{{ domain_name }}"
+
+  tasks:
+    - name: Disable Amazon Linux Extras for Nginx (to avoid conflict if needed, though usually fine)
+      command: amazon-linux-extras disable nginx1
+      ignore_errors: yes
+
+    - name: Enable Nginx via amazon-linux-extras
+      command: amazon-linux-extras enable nginx1
+
+    - name: Install Nginx
+      yum:
+        name: nginx
+        state: present
+
+    - name: Ensure Nginx is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Install OpenSSL
+      yum:
+        name: openssl
+        state: present
+
+    - name: Generate Self-Signed Certificate
+      command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout /etc/nginx/nginx.key
+        -out /etc/nginx/nginx.crt
+        -subj "/C={{ cert_country }}/ST={{ cert_state }}/L={{ cert_locality }}/O={{ cert_org }}/CN={{ cert_common_name }}"
+      args:
+        creates: /etc/nginx/nginx.crt
+
+    - name: Deploy Nginx Configuration
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: Restart Nginx
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
