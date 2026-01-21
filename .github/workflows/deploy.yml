@@ -84,6 +84,11 @@ jobs:
         working-directory: packer
         run: packer init .
 
+      - name: Install Compatible Ansible
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "ansible-core<2.17"
+
       - name: Build Linux AMI
         working-directory: packer
         run: packer build -only="devops-exercise-builder.amazon-ebs.nginx" .
