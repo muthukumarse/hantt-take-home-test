@@ -25,12 +25,20 @@ build {
     "source.amazon-ebs.nginx"
   ]
 
+  provisioner "shell" {
+    inline = [
+      "sudo amazon-linux-extras enable python3.8",
+      "sudo yum install -y python3.8",
+      "sudo ln -sf /usr/bin/python3.8 /usr/bin/python3"
+    ]
+  }
+
   provisioner "ansible" {
     playbook_file = "../ansible/playbook.yml"
     user          = "ec2-user"
     use_proxy     = false
     extra_arguments = [
-      "--extra-vars", "domain_name=example.com ansible_python_interpreter=/usr/bin/python3",
+      "--extra-vars", "domain_name=example.com ansible_python_interpreter=/usr/bin/python3.8",
       "--scp-extra-args='-O'"
     ]
   }
