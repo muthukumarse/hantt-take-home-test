@@ -10,6 +10,10 @@ on:
       confirm_deploy:
         description: 'Type "yes" to confirm deployment to AWS'
         required: true
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
         default: 'no'
 
 env:
