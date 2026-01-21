@@ -31,7 +31,7 @@ build {
     use_proxy     = false
     extra_arguments = [
       "--extra-vars", "domain_name=example.com ansible_python_interpreter=/usr/bin/python3",
-      "--scp-extra-args", "-O" # Critical for sftp failures on some systems
+      "--scp-extra-args='-O'"
     ]
   }
 }
