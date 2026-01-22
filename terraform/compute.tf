@@ -59,9 +59,8 @@ resource "aws_iam_role" "ec2_role" {
         }
       }
     ]
-      }
-    ]
   })
+}
 }
 
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
@@ -94,6 +93,9 @@ data "aws_ami" "linux" {
   }
 }
 
+}
+
+resource "aws_instance" "windows_web" {
   ami           = data.aws_ami.windows.id
   instance_type = var.instance_type
   subnet_id     = aws_subnet.public.id
