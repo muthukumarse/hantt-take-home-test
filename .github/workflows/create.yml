@@ -1,5 +1,5 @@
 name: Create Infra - Build AMI & Deploy
-
+description: "Build Linux and Windows AMI and Deploy Nginx Web Server with Terraform using same AMI"
 on:
   push:
     branches: [ main ]
@@ -84,6 +84,7 @@ jobs:
         working-directory: packer
         run: packer init .
 
+      # use same python version as packer as per packer docs
       - name: Install Compatible Ansible
         run: |
           python3 -m pip install --upgrade pip
@@ -97,7 +98,7 @@ jobs:
         working-directory: packer
         run: packer build -only="devops-exercise-windows.amazon-ebs.windows-nginx" .
 
-  # Phase 3: Infrastructure Deployment (Runs after AMI build)
+  # Phase 3: Infrastructure Deployment (Runs after AMI build) AMI ref passed over to terraform
   deploy-infra:
     needs: build-ami
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_deploy == 'Yes'

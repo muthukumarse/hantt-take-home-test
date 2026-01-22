@@ -1,7 +1,4 @@
-
-
-
-
+# windows nginx ebs and build script
 
 source "amazon-ebs" "windows-nginx" {
   ami_name      = "devops-exercise-windows-${formatdate("YYYYMMDDhhmmss", timestamp())}"
@@ -46,6 +43,7 @@ build {
   }
   
   # Sysprep / Generalize (Optional but good practice, skipping for speed in this exercise)
+  # didn't work well :( - Need to figure out how to make it work
   # provisioner "powershell" {
   #   inline = [
   #     "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\InitializeInstance.ps1 -Schedule",

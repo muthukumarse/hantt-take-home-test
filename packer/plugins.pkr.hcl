@@ -1,3 +1,4 @@
+# just packer plugins - copied from packer docs
 packer {
   required_plugins {
     amazon = {

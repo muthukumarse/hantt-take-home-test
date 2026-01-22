@@ -8,6 +8,7 @@ variable "project_name" {
   default     = "devops-exercise"
 }
 
+# this is for vpc cidr block as per doc sample
 variable "vpc_cidr" {
   description = "CIDR block for VPC"
   default     = "10.0.0.0/16"
@@ -35,6 +36,7 @@ variable "key_name" {
   default     = "my-key-pair" # User should ensure this exists or we can create one (optional)
 }
 
+# don't want to chagne every time so added default value as 0.0.0.0/0
 variable "my_ip" {
   description = "Your public IP address (CIDR format) for RDP/SSH access"
   default     = "0.0.0.0/0" # Change this to your actual IP, e.g., "1.2.3.4/32"

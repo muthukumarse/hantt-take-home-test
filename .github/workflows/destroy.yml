@@ -1,5 +1,5 @@
 name: Destroy Infra
-
+description: "Destroy complete infrastructure to rerun again to test"
 on:
   workflow_dispatch:
     inputs:

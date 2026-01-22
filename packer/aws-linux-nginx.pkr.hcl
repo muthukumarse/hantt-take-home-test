@@ -1,7 +1,4 @@
-
-
-
-
+# nginx ebs and put build script in it
 
 source "amazon-ebs" "nginx" {
   ami_name      = "devops-exercise-nginx-{{timestamp}}"
@@ -9,6 +6,7 @@ source "amazon-ebs" "nginx" {
   region        = var.aws_region
   source_ami_filter {
     filters = {
+      # better one to use 
       name                = "amzn2-ami-hvm-*-x86_64-gp2"
       root-device-type    = "ebs"
       virtualization-type = "hvm"
@@ -29,6 +27,7 @@ build {
     inline = [
       "sudo amazon-linux-extras enable python3.8",
       "sudo yum install -y python3.8",
+      # no choice have to create symlink as python3 is not available in amzn2
       "sudo ln -sf /usr/bin/python3.8 /usr/bin/python3"
     ]
   }

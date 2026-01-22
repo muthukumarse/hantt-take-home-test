@@ -24,12 +24,14 @@
         name: nginx
         state: present
 
+    # hell sometimes it doesn't start automatically
     - name: Ensure Nginx is running and enabled
       service:
         name: nginx
         state: started
         enabled: yes
 
+    # install openssl for self signed certificate - need it for windows
     - name: Install OpenSSL
       yum:
         name: openssl
@@ -64,6 +66,7 @@
         validate: "nginx -t -c %s"
       notify: Restart Nginx
 
+  # restart nginx to apply changes - god to have this in the template
   handlers:
     - name: Restart Nginx
       service:

@@ -1,3 +1,4 @@
+# just required variables - copied from packer docs and hardcoded
 variable "aws_region" {
   type    = string
   default = "us-east-1"
