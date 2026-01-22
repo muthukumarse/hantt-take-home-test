@@ -61,8 +61,18 @@ subjectAltName = @alt_names
 DNS.1 = example.com
 "@ | Out-File -FilePath $OpenSSLConfig -Encoding ASCII
 
+# Find OpenSSL Path
+$OpenSSLPath = "C:\Program Files\OpenSSL-Win64\bin\openssl.exe"
+if (-not (Test-Path $OpenSSLPath)) {
+    $OpenSSLPath = "C:\Program Files\OpenSSL\bin\openssl.exe"
+}
+if (-not (Test-Path $OpenSSLPath)) {
+    Throw "OpenSSL not found at $OpenSSLPath"
+}
+Write-Host "Using OpenSSL at $OpenSSLPath"
+
 # Generate Key and Cert
-& "C:\Program Files\OpenSSL\bin\openssl.exe" req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $KeyPath -out $CrtPath -config $OpenSSLConfig
+& $OpenSSLPath req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $KeyPath -out $CrtPath -config $OpenSSLConfig
 
 # 5. Setup Nginx Configuration
 # We assume the nginx.conf is uploaded to C:\Windows\Temp\nginx.conf by Packer
