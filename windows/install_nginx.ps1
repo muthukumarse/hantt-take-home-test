@@ -2,8 +2,12 @@
 $ErrorActionPreference = "Stop"
 
 # 0. Allow Port 80 and 443 in Firewall (Do this first!)
-New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
-New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow -Profile Any
+New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow -Profile Any
+
+# 0.1 Disable IIS (if present) to prevent P80 conflict
+Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
+Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue
 
 # 1. Install Chocolatey
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))

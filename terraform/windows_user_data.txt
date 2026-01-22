@@ -1,0 +1,13 @@
+<powershell>
+# Force start SSM Agent to ensure connectivity
+Write-Host "Starting SSM Agent..."
+Set-Service -Name "AmazonSSMAgent" -StartupType Automatic
+Start-Service -Name "AmazonSSMAgent"
+
+# Re-apply Firewall Rules (in case Sysprep wiped them)
+New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow -Profile Any
+New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow -Profile Any
+
+# Ensure Nginx Task is running
+Start-ScheduledTask -TaskName "StartNginx"
+</powershell>
