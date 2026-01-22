@@ -37,6 +37,18 @@ build {
     destination = "C:\\Windows\\Temp\\nginx.conf"
   }
 
+  # Upload SSL Certs
+  # Could not able to solve Chocolatey/OpenSSL issue, so this is better approach
+  provisioner "file" {
+    source      = "../windows/nginx.crt"
+    destination = "C:\\Windows\\Temp\\nginx.crt"
+  }
+
+  provisioner "file" {
+    source      = "../windows/nginx.key"
+    destination = "C:\\Windows\\Temp\\nginx.key"
+  }
+
   # Run Installation Script
   provisioner "powershell" {
     script = "../windows/install_nginx.ps1"

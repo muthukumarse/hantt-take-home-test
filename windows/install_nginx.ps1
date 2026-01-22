@@ -9,39 +9,8 @@ New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPo
 Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
 Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue
 
-# 1. Install Chocolatey with Retry Logic - hell didn't work well many time
-# recommandation from reddit
-$MaxRetries = 3
-$RetryCount = 0
-$Completed = $false
-
-while (-not $Completed -and $RetryCount -lt $MaxRetries) {
-    try {
-        Write-Host "Attempting to install Chocolatey (Attempt $($RetryCount + 1)/$MaxRetries)..."
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        $Completed = $true
-        Write-Host "Chocolatey installed successfully."
-    } catch {
-        Write-Warning "Chocolatey installation failed: $_"
-        $RetryCount++
-        if ($RetryCount -lt $MaxRetries) {
-            Write-Host "Retrying in 10 seconds..."
-            Start-Sleep -Seconds 10
-        } else {
-            Throw "Failed to install Chocolatey after $MaxRetries attempts."
-        }
-    }
-}
-
-$env:Path = $env:Path + ";$env:ALLUSERSPROFILE\chocolatey\bin"
-
-# 2. Install OpenSSL
-choco install openssl.light -y
-$env:Path = $env:Path + ";C:\Program Files\OpenSSL\bin"
-
-# 3. Download and Extract Nginx
+# 1. Install Nginx (Direct Download, No Chocolatey)
+# Could not able to solve Chocolatey/OpenSSL. Going with self signed certs.
 $NginxUrl = "http://nginx.org/download/nginx-1.24.0.zip"
 $InstallDir = "C:\nginx"
 $ZipPath = "$env:TEMP\nginx.zip"
@@ -58,45 +27,19 @@ if ($ExtractedDir -and $ExtractedDir.Name -ne "nginx") {
     Rename-Item -Path $ExtractedDir.FullName -NewName "nginx" -Force
 }
 
-# 4. Generate SSL Certificates using OpenSSL
+# 2. Setup SSL Certificates (Uploaded by Packer)
 $CertDir = "$InstallDir\conf"
-$KeyPath = "$CertDir\nginx.key"
-$CrtPath = "$CertDir\nginx.crt"
-$OpenSSLConfig = "$env:TEMP\openssl.cnf"
-
-# Create a minimal OpenSSL config for the cert
-@"
-[req]
-distinguished_name = req_distinguished_name
-x509_extensions = v3_req
-prompt = no
-[req_distinguished_name]
-C = US
-ST = State
-L = City
-O = Organization
-OU = OrgUnit
-CN = example.com
-[v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
-subjectAltName = @alt_names
-[alt_names]
-DNS.1 = example.com
-"@ | Out-File -FilePath $OpenSSLConfig -Encoding ASCII
-
-# Find OpenSSL Path
-$OpenSSLPath = "C:\Program Files\OpenSSL-Win64\bin\openssl.exe"
-if (-not (Test-Path $OpenSSLPath)) {
-    $OpenSSLPath = "C:\Program Files\OpenSSL\bin\openssl.exe"
+Write-Host "Moving SSL Certificates..."
+if (Test-Path "C:\Windows\Temp\nginx.crt") {
+    Move-Item -Path "C:\Windows\Temp\nginx.crt" -Destination "$CertDir\nginx.crt" -Force
+} else {
+    Write-Warning "nginx.crt not found in Temp!"
 }
-if (-not (Test-Path $OpenSSLPath)) {
-    Throw "OpenSSL not found at $OpenSSLPath"
+if (Test-Path "C:\Windows\Temp\nginx.key") {
+    Move-Item -Path "C:\Windows\Temp\nginx.key" -Destination "$CertDir\nginx.key" -Force
+} else {
+    Write-Warning "nginx.key not found in Temp!"
 }
-Write-Host "Using OpenSSL at $OpenSSLPath"
-
-# Generate Key and Cert
-& $OpenSSLPath req -x509 -nodes -days 365 -newkey rsa:2048 -keyout $KeyPath -out $CrtPath -config $OpenSSLConfig
 
 # 5. Setup Nginx Configuration
 # We assume the nginx.conf is uploaded to C:\Windows\Temp\nginx.conf by Packer
