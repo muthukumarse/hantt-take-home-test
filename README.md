@@ -43,6 +43,12 @@ Create a key pair to access the instances (SSH/RDP).
 - **Format**: `.pem`
 - **Action**: Download the `.pem` file to your local machine. You will need this to decrypt the Windows Administrator password.
 
+### 2.3 Configure GitHub Secrets
+If you fork this repository to run it in your own environment, you must add the following secrets in **Settings > Secrets and variables > Actions**:
+- `AWS_ACCESS_KEY_ID`: Your AWS Access Key.
+- `AWS_SECRET_ACCESS_KEY`: Your AWS Secret Key.
+- `AWS_REGION`: `us-east-1` (Optional, defaults to us-east-1 in workflow).
+
 ---
 
 ## 3. Project Structure
@@ -203,3 +209,13 @@ The EC2 instances are assigned an IAM Role `devops-exercise-ec2-role` with `Amaz
 #### Evidence: IAM Role
 ![IAM Role](docs/iam_role.png)
 *(Screenshot of the IAM Role and attached policies)*
+
+### 7.5 CI/CD Automation
+The entire infrastructure lifecycle is managed via GitHub Actions.
+
+#### Evidence: Pipeline Success
+![Create Infra Pipeline](docs/create-infra-pipeline.png)
+*(Screenshot of the Build & Deploy workflow)*
+
+![Destroy Infra Pipeline](docs/destroy-infra-pipeline.png)
+*(Screenshot of the Destroy workflow)*
