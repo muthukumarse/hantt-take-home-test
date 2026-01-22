@@ -1,25 +1,36 @@
-# DevOps Take-Home Test
+# DevOps Take-Home Test - Nginx Infrastructure
 
+**Author**: Muthukumar Selvarasu
+**Date**: 2026-01-22
+**Environment**: AWS
+
+## 1. Executive Summary
 This repository contains the infrastructure automation for deploying an Nginx web server on both Amazon Linux 2 and Windows Server 2019 using Packer, Terraform, Ansible, and GitHub Actions.
 
-## Prerequisites (Manual Setup)
+This document serves as both the project documentation and the verification report confirming the successful deployment of the secure, dual-platform infrastructure.
+
+---
+
+## 2. Prerequisites (Manual Setup)
 
 Before running the pipeline, you must manually set up the following in your AWS Account (`us-east-1`):
 
-### 1. Create S3 Bucket for Terraform State
+### 2.1 Create S3 Bucket for Terraform State
 Create an S3 bucket to store the Terraform state file.
 - **Bucket Name**: `devops-exercise-tf-state-<your-name>` (Update `terraform/providers.tf` if different).
 - **Region**: `us-east-1`.
 - **Versioning**: Enabled (Recommended).
 
-### 2. Create EC2 Key Pair
+### 2.2 Create EC2 Key Pair
 Create a key pair to access the instances (SSH/RDP).
 - **Name**: `my-key-pair`
 - **Type**: RSA
 - **Format**: `.pem`
 - **Action**: Download the `.pem` file to your local machine. You will need this to decrypt the Windows Administrator password.
 
-## Project Structure
+---
+
+## 3. Project Structure
 ```
 ├── .github/
 │   └── workflows/
@@ -50,11 +61,13 @@ Create a key pair to access the instances (SSH/RDP).
 ├── scripts/
 │   └── validate_local.sh   # Utility: Local Validation Script
 ├── .gitignore              # Git: Ignored Files
-├── deliverable.md          # Doc: Deliverable Checklist
+├── docs/                   # Evidence: Screenshots for Verification
 └── README.md               # Doc: Project Documentation
 ```
 
-## Architectural Decisions
+---
+
+## 4. Architectural Decisions
 
 ### Windows Strategy
 1.  **Local SSL Certificates**: 
@@ -70,7 +83,23 @@ Create a key pair to access the instances (SSH/RDP).
     - We explicitly schedule `InitializeInstance.ps1` to run checking User Data on the next boot.
     - *Why?* Ensures the SSM Agent is correctly started and registered when a new instance launches from the AMI.
 
-## Accessing the Servers
+---
+
+## 5. Pipelines (GitHub Actions)
+
+### 5.1 Create Infra - Build AMI & Deploy
+This workflow builds the custom AMIs (Linux & Windows) and deploys the infrastructure.
+- **Trigger**: Go to **Actions** -> **Create Infra - Build AMI & Deploy** -> **Run workflow**.
+- **Inputs**:
+    - **Build Linux & Windows AMI ?**: Select `Yes` to build fresh AMIs.
+    - **Deploy Nginx Web Server ?**: Select `Yes` to deploy with Terraform.
+
+### 5.2 Destroy Infra
+Destroys all infrastructure to clean up.
+
+---
+
+## 6. Accessing the Servers
 
 ### Linux
 - **Connect**: Use Session Manager (AWS Console) OR SSH.
@@ -84,14 +113,61 @@ Create a key pair to access the instances (SSH/RDP).
     - **Password**: Decrypt using the `my-key-pair.pem` file in AWS Console.
 - **Verify**: Open `http://<public-ip>` in your browser.
 
-## Pipelines (GitHub Actions)
+---
 
-### 1. Create Infra - Build AMI & Deploy
-This workflow builds the custom AMIs (Linux & Windows) and deploys the infrastructure.
-- **Trigger**: Go to **Actions** -> **Create Infra - Build AMI & Deploy** -> **Run workflow**.
-- **Inputs**:
-    - **Build Linux & Windows AMI ?**: Select `Yes` to build fresh AMIs.
-    - **Deploy Nginx Web Server ?**: Select `Yes` to deploy with Terraform.
+## 7. Deployment Verification Report (Evidence)
 
-### 2. Destroy Infra
-Destroys all infrastructure to clean up.
+The following sections confirm the successful deployment of the infrastructure.
+
+### 7.1 Artifacts Generated
+Immutable artifacts built using Packer:
+
+| OS | AMI Name | Base Image | Key Software |
+| :--- | :--- | :--- | :--- |
+| **Linux** | `devops-exercise-nginx-*` | Amazon Linux 2 | Nginx, Python 3.8 |
+| **Windows** | `devops-exercise-windows-*` | Windows Server 2019 | Nginx, SSM Agent |
+
+#### Evidence: AMI Console
+![AMI Console Screenshot](docs/ami_console.png)
+*(Place screenshot of AWS EC2 > AMIs verifying both images exist)*
+
+### 7.2 Infrastructure Resources
+
+#### Network Topology
+- **VPC**: `devops-exercise-vpc` (10.0.0.0/16)
+- **Subnets**: Public (10.0.1.0/24) & Private (10.0.2.0/24)
+- **Security**: Port 80/443 (Global), Port 22/3389 (Restricted)
+
+#### Evidence: VPC Dashboard
+![VPC Dashboard Screenshot](docs/vpc_dashboard.png)
+*(Place screenshot of VPC verification)*
+
+#### Compute Instances
+Two EC2 instances are currently running and serving traffic.
+
+| Name | ID | Public IP | Status |
+| :--- | :--- | :--- | :--- |
+| `devops-exercise-linux-web` | `i-xxxxxxxx` | `x.x.x.x` | Running |
+| `devops-exercise-windows-web` | `i-xxxxxxxx` | `x.x.x.x` | Running |
+
+#### Evidence: EC2 Instances
+![EC2 Instances Screenshot](docs/ec2_instances.png)
+*(Place screenshot of AWS EC2 > Instances)*
+
+### 7.3 Validation
+
+#### Web Accessibility
+Nginx is successfully serving the custom landing page on both platforms.
+
+**Linux Verification**:
+![Linux Web Page](docs/linux_web_proof.png)
+
+**Windows Verification**:
+![Windows Web Page](docs/windows_web_proof.png)
+
+#### Security Group Rules
+Firewall rules are correctly applied, allowing web traffic while restricting management ports.
+
+#### Evidence: Security Group Rules
+![Security Group Rules](docs/sg_rules.png)
+*(Place screenshot of the `devops-exercise-web-sg` inbound rules)*
