@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_destroy:
-        description: 'Type "DESTROY" to confirm infrastructure destruction'
+        description: 'Destroy Everything ?'
         required: true
         type: choice
         options:
