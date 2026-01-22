@@ -4,7 +4,22 @@
 - **Date**: 2026-01-22
 - **Environment**: AWS
 
-## 1. Executive Summary
+## 1. Project Requirements Mapping
+This section maps the take-home test requirements to their specific implementation in this repository.
+
+![Project Requirements](docs/requirement.png)
+
+| **Requirement** | **Implementation Status** | **Location** |
+| :--- | :--- | :--- |
+| **Terraform**: Build VPC & Subnets | ✅ Completed | `terraform/networking.tf` |
+| **Terraform**: Build EC2 with IAM | ✅ Completed | `terraform/compute.tf` |
+| **Ansible**: Install Nginx + HTTPS | ✅ Completed | `ansible/playbook.yml` |
+| **Packer**: Linux AMI (w/ Ansible) | ✅ Completed | `packer/aws-linux-nginx.pkr.hcl` |
+| **Packer**: Windows AMI (w/ Nginx) | ✅ Completed | `packer/windows-nginx.pkr.hcl` |
+
+---
+
+## 2. Executive Summary
 This repository contains the infrastructure automation for deploying an Nginx web server on both Amazon Linux 2 and Windows Server 2019 using Packer, Terraform, Ansible, and GitHub Actions.
 
 This document serves as both the project documentation and the verification report confirming the successful deployment of the secure, dual-platform infrastructure.
@@ -119,7 +134,17 @@ Destroys all infrastructure to clean up.
 
 The following sections confirm the successful deployment of the infrastructure.
 
-### 7.1 Artifacts Generated
+### 7.1 Prerequisites Verification
+Before automation ran, the following manual resources were confirmed:
+
+#### Evidence: S3 Backend & Key Pair
+- **S3 Bucket**: `devops-exercise-tf-state-*` for state storage.
+![S3 Bucket](docs/s3_bucket.png)
+
+- **Key Pair**: `my-key-pair` for EC2 access.
+![Key Pair](docs/key-pair.png)
+
+### 7.2 Artifacts Generated
 Immutable artifacts built using Packer:
 
 | OS | AMI Name | Base Image | Key Software |
@@ -171,3 +196,10 @@ Firewall rules are correctly applied, allowing web traffic while restricting man
 #### Evidence: Security Group Rules
 ![Security Group Rules](docs/sg_rules.png)
 *(Place screenshot of the `devops-exercise-web-sg` inbound rules)*
+
+### 7.4 IAM & Permissions
+The EC2 instances are assigned an IAM Role `devops-exercise-ec2-role` with `AmazonSSMManagedInstanceCore` policy attached, enabling Session Manager access.
+
+#### Evidence: IAM Role
+![IAM Role](docs/iam_role.png)
+*(Screenshot of the IAM Role and attached policies)*
