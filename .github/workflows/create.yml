@@ -1,4 +1,4 @@
-name: Create Infra - Build AMI & Deploy to AWS
+name: Create Infra - Build AMI & Deploy
 
 on:
   push:
