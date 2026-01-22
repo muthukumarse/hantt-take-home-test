@@ -20,7 +20,7 @@ env:
 jobs:
   destroy:
     name: Destroy Infrastructure
-    if: github.event.inputs.confirm_destroy == 'DESTROY'
+    if: github.event.inputs.confirm_destroy == 'Yes'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
