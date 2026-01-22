@@ -1,10 +1,13 @@
 name: Create Infra - Build AMI & Deploy
 description: "Build Linux and Windows AMI and Deploy Nginx Web Server with Terraform using same AMI"
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  # push and pull_request are optional
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+  
+  # workflow_dispatch: # Allows manual trigger for the full Build & Deploy
   workflow_dispatch: # Allows manual trigger for the full Build & Deploy
     inputs:
       build_ami:
