@@ -1,4 +1,4 @@
-name: DevOps Exercise Pipeline
+name: Create Infra - Build AMI & Deploy to AWS
 
 on:
   push:
