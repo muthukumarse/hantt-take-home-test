@@ -61,7 +61,7 @@ resource "aws_iam_role" "ec2_role" {
     ]
   })
 }
-}
+
 
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_role.name
@@ -93,7 +93,7 @@ data "aws_ami" "linux" {
   }
 }
 
-}
+
 
 resource "aws_instance" "windows_web" {
   ami           = data.aws_ami.windows.id
