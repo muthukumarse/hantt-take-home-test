@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # Allows manual trigger for the full Build & Deploy
     inputs:
       build_ami:
-        description: 'Select "Yes" to confirm build AMI'
+        description: 'build AMI ?'
         required: true
         type: choice
         options:
@@ -16,7 +16,7 @@ on:
           - 'No'
         default: 'No'
       confirm_deploy:
-        description: 'Select "Yes" to confirm deployment to AWS'
+        description: 'Deploy Web Server ?'
         required: true
         type: choice
         options:
