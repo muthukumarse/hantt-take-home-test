@@ -90,3 +90,10 @@ Write-Host "Cleaning up SSM Agent state for AMI..."
 Stop-Service -Name "AmazonSSMAgent" -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "C:\ProgramData\Amazon\SSM\*" -Recurse -Force -ErrorAction SilentlyContinue
 
+# 11. Schedule User Data Execution for Next Boot
+# This is CRITICAL. Without this, the new instance won't run the User Data script
+# because it thinks it's already initialized.
+Write-Host "Scheduling User Data execution..."
+C:\ProgramData\Amazon\EC2-Windows\Launch\Scripts\InitializeInstance.ps1 -Schedule
+
+
