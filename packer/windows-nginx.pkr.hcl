@@ -38,7 +38,8 @@ build {
   }
 
   # Upload SSL Certs
-  # Could not able to solve Chocolatey/OpenSSL issue, so this is better approach
+  # DECISION: Improve robustness by uploading locally generated certs.
+  # This avoids 504 Gateway Timeouts from Chocolatey/OpenSSL downloads during build.
   provisioner "file" {
     source      = "../windows/nginx.crt"
     destination = "C:\\Windows\\Temp\\nginx.crt"

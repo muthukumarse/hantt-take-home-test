@@ -1,6 +1,7 @@
 <powershell>
 # 1. Disable IIS (World Wide Web Publishing Service) to prevent Port 80 conflict
-# Sysprep might have re-enabled it. This is critical for Nginx.
+# CRITICAL: Sysprep often re-enables IIS. Since we want Nginx on Port 80,
+# we must explicitly stop and disable W3SVC at boot time.
 Write-Host "Disabling IIS..."
 Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
 Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue

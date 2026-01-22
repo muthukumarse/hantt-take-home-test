@@ -79,6 +79,8 @@ data "aws_ami" "windows" {
 
   filter {
     name   = "name"
+    # Looks for a string matching "devops-exercise-windows-*"
+    # This allows us to pick up the very latest AMI built by Packer automatically.
     values = ["devops-exercise-windows-*"]
   }
 }

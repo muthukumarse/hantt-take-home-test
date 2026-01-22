@@ -10,7 +10,8 @@ Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
 Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue
 
 # 1. Install Nginx (Direct Download, No Chocolatey)
-# Could not able to solve Chocolatey/OpenSSL. Going with self signed certs.
+# DECISION: We avoid Chocolatey here because the CDN is flaky and often causes 504 timeouts.
+# Direct download is faster and more reliable for this test.
 $NginxUrl = "http://nginx.org/download/nginx-1.24.0.zip"
 $InstallDir = "C:\nginx"
 $ZipPath = "$env:TEMP\nginx.zip"
@@ -28,6 +29,8 @@ if ($ExtractedDir -and $ExtractedDir.Name -ne "nginx") {
 }
 
 # 2. Setup SSL Certificates (Uploaded by Packer)
+# DECISION: We generate certs locally and upload them via Packer
+# to avoid installing OpenSSL on the VM (which depends on Chocolatey).
 $CertDir = "$InstallDir\conf"
 Write-Host "Moving SSL Certificates..."
 if (Test-Path "C:\Windows\Temp\nginx.crt") {
@@ -85,7 +88,8 @@ if ($ssmService) {
 }
 
 # 10. Clean up SSM Agent for AMI creation
-# This is crucial so the new instance generates its own unique ID
+# CRITICAL: We must remove the agent's state files. If we don't, every instance launched
+# from this AMI will try to use the same SSM ID, causing conflicts.
 Write-Host "Cleaning up SSM Agent state for AMI..."
 Stop-Service -Name "AmazonSSMAgent" -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "C:\ProgramData\Amazon\SSM\*" -Recurse -Force -ErrorAction SilentlyContinue
