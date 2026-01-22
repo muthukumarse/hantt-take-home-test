@@ -1,8 +1,8 @@
 # DevOps Take-Home Test - Nginx Infrastructure
 
-**Author**: Muthukumar Selvarasu
-**Date**: 2026-01-22
-**Environment**: AWS
+- **Author**: Muthukumar Selvarasu
+- **Date**: 2026-01-22
+- **Environment**: AWS
 
 ## 1. Executive Summary
 This repository contains the infrastructure automation for deploying an Nginx web server on both Amazon Linux 2 and Windows Server 2019 using Packer, Terraform, Ansible, and GitHub Actions.
