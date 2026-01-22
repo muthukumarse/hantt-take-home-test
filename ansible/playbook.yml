@@ -37,6 +37,18 @@
         name: openssl
         state: present
 
+    # to access directly to test
+    - name: Install SSM Agent
+      yum:
+        name: amazon-ssm-agent
+        state: present
+
+    - name: Enable SSM Agent
+      service:
+        name: amazon-ssm-agent
+        state: started
+        enabled: yes
+
     - name: Generate Self-Signed Certificate
       command: >
         openssl req -x509 -nodes -days 365 -newkey rsa:2048

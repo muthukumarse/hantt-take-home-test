@@ -1,6 +1,10 @@
 # PowerShell script to install Nginx on Windows Server with SSL
 $ErrorActionPreference = "Stop"
 
+# 0. Allow Port 80 and 443 in Firewall (Do this first!)
+New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+
 # 1. Install Chocolatey
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 $env:Path = $env:Path + ";$env:ALLUSERSPROFILE\chocolatey\bin"
@@ -68,9 +72,7 @@ $Trigger = New-ScheduledTaskTrigger -AtStartup
 $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
 Register-ScheduledTask -TaskName "StartNginx" -Action $Action -Trigger $Trigger -Principal $Principal
 
-# 7. Allow Port 80 and 443 in Firewall
-New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow
-New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow
+
 
 # 8. Create Custom Index Page
 $IndexFile = "$InstallDir\html\index.html"
@@ -87,3 +89,16 @@ $Content = @"
 Set-Content -Path $IndexFile -Value $Content
 
 Write-Host "Nginx installation and configuration complete."
+
+# 9. Ensure SSM Agent is running (It should be pre-installed on AWS AMIs)
+Write-Host "Verifying SSM Agent..."
+$ssmService = Get-Service -Name "AmazonSSMAgent" -ErrorAction SilentlyContinue
+if ($ssmService) {
+    Set-Service -Name "AmazonSSMAgent" -StartupType Automatic
+    if ($ssmService.Status -ne "Running") {
+        Start-Service -Name "AmazonSSMAgent"
+    }
+    Write-Host "SSM Agent is running."
+} else {
+    Write-Warning "AmazonSSMAgent service not found! This is unexpected for an AWS Windows AMI."
+}
