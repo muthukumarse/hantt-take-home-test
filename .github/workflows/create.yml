@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # Allows manual trigger for the full Build & Deploy
     inputs:
       build_ami:
-        description: 'build AMI ?'
+        description: 'Build Linux & Windows AMI ?'
         required: true
         type: choice
         options:
@@ -16,7 +16,7 @@ on:
           - 'No'
         default: 'No'
       confirm_deploy:
-        description: 'Deploy Web Server ?'
+        description: 'Deploy Nginx Web Server ?'
         required: true
         type: choice
         options:
