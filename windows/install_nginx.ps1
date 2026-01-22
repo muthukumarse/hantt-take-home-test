@@ -9,8 +9,32 @@ New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPo
 Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
 Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue
 
-# 1. Install Chocolatey
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# 1. Install Chocolatey with Retry Logic - hell didn't work well many time
+# recommandation from reddit
+$MaxRetries = 3
+$RetryCount = 0
+$Completed = $false
+
+while (-not $Completed -and $RetryCount -lt $MaxRetries) {
+    try {
+        Write-Host "Attempting to install Chocolatey (Attempt $($RetryCount + 1)/$MaxRetries)..."
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        $Completed = $true
+        Write-Host "Chocolatey installed successfully."
+    } catch {
+        Write-Warning "Chocolatey installation failed: $_"
+        $RetryCount++
+        if ($RetryCount -lt $MaxRetries) {
+            Write-Host "Retrying in 10 seconds..."
+            Start-Sleep -Seconds 10
+        } else {
+            Throw "Failed to install Chocolatey after $MaxRetries attempts."
+        }
+    }
+}
+
 $env:Path = $env:Path + ";$env:ALLUSERSPROFILE\chocolatey\bin"
 
 # 2. Install OpenSSL
@@ -81,7 +105,7 @@ if (Test-Path "C:\Windows\Temp\nginx.conf") {
 }
 
 # 6. Create Scheduled Task to Start Nginx on Boot
-$Action = New-ScheduledTaskAction -Execute "$InstallDir\nginx.exe"
+$Action = New-ScheduledTaskAction -Execute "$InstallDir\nginx.exe" -WorkingDirectory $InstallDir
 $Trigger = New-ScheduledTaskTrigger -AtStartup
 $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount
 Register-ScheduledTask -TaskName "StartNginx" -Action $Action -Trigger $Trigger -Principal $Principal
@@ -116,3 +140,10 @@ if ($ssmService) {
 } else {
     Write-Warning "AmazonSSMAgent service not found! This is unexpected for an AWS Windows AMI."
 }
+
+# 10. Clean up SSM Agent for AMI creation
+# This is crucial so the new instance generates its own unique ID
+Write-Host "Cleaning up SSM Agent state for AMI..."
+Stop-Service -Name "AmazonSSMAgent" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\ProgramData\Amazon\SSM\*" -Recurse -Force -ErrorAction SilentlyContinue
+
