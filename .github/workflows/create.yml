@@ -1,0 +1,125 @@
+name: Create Infra - Build AMI & Deploy
+description: "Build Linux and Windows AMI and Deploy Nginx Web Server with Terraform using same AMI"
+on:
+  # push and pull_request are optional
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
+  
+  # workflow_dispatch: # Allows manual trigger for the full Build & Deploy
+  workflow_dispatch: # Allows manual trigger for the full Build & Deploy
+    inputs:
+      build_ami:
+        description: 'Build Linux & Windows AMI ?'
+        required: true
+        type: choice
+        options:
+          - 'Yes'
+          - 'No'
+        default: 'No'
+      confirm_deploy:
+        description: 'Deploy Nginx Web Server ?'
+        required: true
+        type: choice
+        options:
+          - 'Yes'
+          - 'No'
+        default: 'No'
+
+env:
+  AWS_REGION: us-east-1
+  # Credentials must be set in repository secrets
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  # Phase 1: Validation (Runs on every push)
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.3.0
+
+      - name: Terraform Init & Validate
+        working-directory: terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v2
+        with:
+          version: 1.8.6
+
+      - name: Packer Init & Validate
+        working-directory: packer
+        run: |
+          packer init .
+          packer validate .
+
+      - name: Ansible Syntax Check
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+          ansible-playbook ansible/playbook.yml --syntax-check
+
+  # Phase 2: Build Golden Image (Runs only on main with manual confirmation)
+  build-ami:
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.build_ami == 'Yes'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v2
+        with:
+          version: 1.8.6
+
+      - name: Initialize Packer
+        working-directory: packer
+        run: packer init .
+
+      # use same python version as packer as per packer docs
+      - name: Install Compatible Ansible
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "ansible-core<2.17"
+
+      - name: Build Linux AMI
+        working-directory: packer
+        run: packer build -only="devops-exercise-builder.amazon-ebs.nginx" .
+
+      - name: Build Windows AMI
+        working-directory: packer
+        run: packer build -only="devops-exercise-windows.amazon-ebs.windows-nginx" .
+
+  # Phase 3: Infrastructure Deployment (Runs after AMI build) AMI ref passed over to terraform
+  deploy-infra:
+    needs: build-ami
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_deploy == 'Yes'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.3.0
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform
+        # -auto-approve is used for automation. In production, consider a separate detailed plan & apply workflow.
+        run: terraform apply -auto-approve

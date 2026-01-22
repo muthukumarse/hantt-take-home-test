@@ -1,0 +1,28 @@
+<powershell>
+# 1. Disable IIS (World Wide Web Publishing Service) to prevent Port 80 conflict
+# CRITICAL: Sysprep often re-enables IIS. Since we want Nginx on Port 80,
+# we must explicitly stop and disable W3SVC at boot time.
+Write-Host "Disabling IIS..."
+Stop-Service -Name W3SVC -Force -ErrorAction SilentlyContinue
+Set-Service -Name W3SVC -StartupType Disabled -ErrorAction SilentlyContinue
+
+# 2. Force start SSM Agent to ensure connectivity
+Write-Host "Starting SSM Agent..."
+Set-Service -Name "AmazonSSMAgent" -StartupType Automatic
+Start-Service -Name "AmazonSSMAgent"
+
+# 3. Re-apply Firewall Rules
+# Global Port Open
+New-NetFirewallRule -DisplayName "Allow Nginx HTTP" -Direction Inbound -LocalPort 80 -Protocol TCP -Action Allow -Profile Any
+New-NetFirewallRule -DisplayName "Allow Nginx HTTPS" -Direction Inbound -LocalPort 443 -Protocol TCP -Action Allow -Profile Any
+
+# Application Exception (More Robust)
+New-NetFirewallRule -DisplayName "Allow Nginx App" -Direction Inbound -Program "C:\nginx\nginx.exe" -Action Allow -Profile Any
+
+# 4. Ensure Nginx Task is running
+try {
+    Start-ScheduledTask -TaskName "StartNginx" -ErrorAction Stop
+} catch {
+    Write-Warning "Nginx task failed to start or is already running: $_"
+}
+</powershell>

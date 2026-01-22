@@ -1,0 +1,10 @@
+# just required variables - copied from packer docs and hardcoded
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "instance_type" {
+  type    = string
+  default = "t2.medium" # Defaulting to medium to support Windows requirements
+}
