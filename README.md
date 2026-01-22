@@ -1,100 +1,53 @@
-# DevOps Exercise - Nginx on Linux & Windows
+# DevOps Take-Home Test
 
-This project provisions a dual-platform environment (Linux & Windows) running Nginx, using Terraform, Ansible, and Packer, automated via GitHub Actions.
+This repository contains the infrastructure automation for deploying an Nginx web server on both Amazon Linux 2 and Windows Server 2019 using Packer, Terraform, Ansible, and GitHub Actions.
 
-## Project Structure
+## Prerequisites (Manual Setup)
 
-- `terraform/`: Infrastructure components (AWS VPC, EC2, SG).
-- `ansible/`: Configuration management for Amazon Linux 2 (Nginx + SSL).
-- `packer/`: AMI build templates.
-    - `aws-linux-nginx.pkr.hcl`: Builds Amazon Linux 2 AMI using Ansible.
-    - `windows-nginx.pkr.hcl`: Builds Windows Server 2019 AMI using PowerShell.
-- `windows/`: PowerShell scripts and config for Windows Nginx setup.
-- `.github/workflows/`: CI/CD pipeline.
+Before running the pipeline, you must manually set up the following in your AWS Account (`us-east-1`):
 
-## Prerequisites
+### 1. Create S3 Bucket for Terraform State
+Create an S3 bucket to store the Terraform state file.
+- **Bucket Name**: `devops-exercise-tf-state-<your-name>` (Update `terraform/providers.tf` if different).
+- **Region**: `us-east-1`.
+- **Versioning**: Enabled (Recommended).
 
-1.  **AWS Credentials**: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` stored as GitHub Secrets.
-2.  **GitHub Actions**: Enabled for the repository.
+### 2. Create EC2 Key Pair
+Create a key pair to access the instances (SSH/RDP).
+- **Name**: `my-key-pair`
+- **Type**: RSA
+- **Format**: `.pem`
+- **Action**: Download the `.pem` file to your local machine. You will need this to decrypt the Windows Administrator password.
 
-## Local Development (Faster Feedback Loop)
+## Pipelines (GitHub Actions)
 
-To validate your changes locally before pushing to GitHub:
+### 1. Create Infra - Build AMI & Deploy
+This workflow builds the custom AMIs (Linux & Windows) and deploys the infrastructure.
+- **Trigger**: Go to **Actions** -> **Create Infra - Build AMI & Deploy** -> **Run workflow**.
+- **Inputs**:
+    - **Build Linux & Windows AMI ?**: Select `Yes` to build fresh AMIs (takes ~15 mins). Select `No` to reuse existing AMIs.
+    - **Deploy Nginx Web Server ?**: Select `Yes` to run Terraform apply.
 
-### 1. Install Dependencies (macOS)
-```bash
-brew install packer terraform ansible
-```
+### 2. Destroy Infra
+This workflow destroys all infrastructure created by Terraform.
+- **Trigger**: Go to **Actions** -> **Destroy Infra** -> **Run workflow**.
+- **Input**: Select `Yes` to confirm destruction.
 
-### 2. Run Validation Script
-I have prepared a script to validate Terraform, Packer, and Ansible code locally.
-```bash
-./scripts/validate_local.sh
-```
+## Accessing the Servers
 
-## How to Deploy via GitHub Actions
+### Linux
+- **Connect**: Use Session Manager (AWS Console) OR SSH.
+- **SSH Command**: `ssh -i my-key-pair.pem ec2-user@<public-ip>`
+- **Verify**: Open `http://<public-ip>` in your browser.
 
-The deployment is automated via the **DevOps Exercise Pipeline** GitHub Action.
+### Windows
+- **Connect**: Use RDP.
+    - **Username**: `Administrator`
+    - **Password**: Decrypt using the `my-key-pair.pem` file in AWS Console.
+- **Verify**: Open `http://<public-ip>` in your browser.
 
-### 1. Build AMIs
-Go to **Actions** -> **DevOps Exercise Pipeline** -> **Run workflow**.
-- Select **Yes** for `build_ami`.
-- (Optional) Select **No** for `confirm_deploy` if you only want to build images.
-
-This will build two AMIs:
-- `devops-exercise-nginx-<timestamp>` (Linux)
-- `devops-exercise-windows-<timestamp>` (Windows)
-
-### 2. Deploy Infrastructure
-Go to **Actions** -> **DevOps Exercise Pipeline** -> **Run workflow**.
-- Select **No** for `build_ami` (if already built).
-- Select **Yes** for `confirm_deploy`.
-
-This will run `terraform apply` and provision:
-- 1 x Linux EC2 public instance
-- 1 x Windows EC2 public instance
-
-## Verification
-
-### Check Outputs
-The GitHub Action logs (or local `terraform output`) will display:
-- `linux_public_ip`
-- `windows_public_ip`
-
-### Verify Linux
-```bash
-curl -k https://<linux_public_ip>
-# Should return Nginx welcome page
-```
-
-### Verify Windows
-1.  **HTTPS**: Open `https://<windows_public_ip>` in a browser (accept simple self-signed cert warning).
-2.  **RDP**: Connect to `<windows_public_ip>` via RDP (Port 3389).
-    - Username: `Administrator`
-    - Password: (Get from AWS Console -> Connect -> RDP Client -> Get Password using your Key Pair)
-
-### Verify Terraform
-```bash
-terraform output
-# Should display the public IP addresses
-```
-
-### Verify Packer
-```bash
-packer validate aws-linux-nginx.pkr.hcl
-packer validate windows-nginx.pkr.hcl
-# Should display no errors
-```
-
-### Verify Ansible
-```bash
-ansible-playbook ansible/playbook.yml --syntax-check
-# Should display no errors
-```
-
-### TODO
-- How to verify the AMIs?
-- Add Packer build and Ansible run
-- Add Terraform apply
-- Add Terraform destroy
-
+## Architecture
+- **Packer**: Builds immutable AMIs with Nginx pre-installed.
+- **Terraform**: Provisions VPC, Subnets, Security Groups, IAM Roles, and EC2 Instances.
+- **Ansible/PowerShell**: Configures Nginx and installs necessary agents.
+- **GitHub Actions**: Orchestrates the entire lifecycle.
